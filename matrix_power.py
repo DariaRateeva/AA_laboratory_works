@@ -2,58 +2,52 @@ import time
 import tracemalloc
 import matplotlib.pyplot as plt
 
-# Matrix exponentiation method for Fibonacci (O(log n))
-MOD = 10**9 + 7
 
-# function to multiply two 2x2 Matrices
-def multiply(A, B):
-    # Matrix to store the result
-    C = [[0, 0], [0, 0]]
+def multiply(mat1, mat2):
+    # Perform matrix multiplication
+    x = mat1[0][0] * mat2[0][0] + mat1[0][1] * mat2[1][0]
+    y = mat1[0][0] * mat2[0][1] + mat1[0][1] * mat2[1][1]
+    z = mat1[1][0] * mat2[0][0] + mat1[1][1] * mat2[1][0]
+    w = mat1[1][0] * mat2[0][1] + mat1[1][1] * mat2[1][1]
 
-    # Matrix Multiply
-    C[0][0] = (A[0][0] * B[0][0] + A[0][1] * B[1][0]) % MOD
-    C[0][1] = (A[0][0] * B[0][1] + A[0][1] * B[1][1]) % MOD
-    C[1][0] = (A[1][0] * B[0][0] + A[1][1] * B[1][0]) % MOD
-    C[1][1] = (A[1][0] * B[0][1] + A[1][1] * B[1][1]) % MOD
-
-    # Copy the result back to the first matrix
-    A[0][0] = C[0][0]
-    A[0][1] = C[0][1]
-    A[1][0] = C[1][0]
-    A[1][1] = C[1][1]
-
-# Function to find (Matrix M ^ expo)
-def power(M, expo):
-    # Initialize result with identity matrix
-    ans = [[1, 0], [0, 1]]
-
-    # Fast Exponentiation
-    while expo:
-        if expo & 1:
-            multiply(ans, M)
-        multiply(M, M)
-        expo >>= 1
-
-    return ans
+    # Update matrix mat1 with the result
+    mat1[0][0], mat1[0][1] = x, y
+    mat1[1][0], mat1[1][1] = z, w
 
 
-def nthFibonacci(n):
-    # Base case
+# Function to perform matrix exponentiation
+def matrix_power(mat1, n):
+    # Base case for recursion
     if n == 0 or n == 1:
-        return 1
+        return
 
-    M = [[1, 1], [1, 0]]
-    # F(0) = 0, F(1) = 1
-    F = [[1, 0], [0, 0]]
+    # Initialize a helper matrix
+    mat2 = [[1, 1], [1, 0]]
 
-    # Multiply matrix M (n - 1) times
-    res = power(M, n - 1)
+    # Recursively calculate mat1^(n // 2)
+    matrix_power(mat1, n // 2)
 
-    # Multiply Resultant with Matrix F
-    multiply(res, F)
+    # Square the matrix mat1
+    multiply(mat1, mat1)
 
-    return res[0][0] % MOD
+    # If n is odd, multiply by the helper matrix mat2
+    if n % 2 != 0:
+        multiply(mat1, mat2)
 
+
+# Function to calculate the nth Fibonacci number
+def nth_fibonacci(n):
+    if n <= 1:
+        return n
+
+    # Initialize the transformation matrix
+    mat1 = [[1, 1], [1, 0]]
+
+    # Raise the matrix mat1 to the power of (n - 1)
+    matrix_power(mat1, n - 1)
+
+    # The result is in the top-left cell of the matrix
+    return mat1[0][0]
 # Second series of Fibonacci indices (larger scope)
 second_series = [501, 631, 794, 1000, 1259, 1585, 1995, 2512, 3162, 3981, 5012, 6310, 7943, 10000, 12589, 15849]
 
@@ -65,7 +59,7 @@ space_used = []
 for num in second_series:
     tracemalloc.start()
     start_time = time.time()
-    nthFibonacci(num)  # Using Matrix Power method
+    nth_fibonacci(num)  # Using Matrix Power method
     end_time = time.time()
 
     current_memory, peak_memory = tracemalloc.get_traced_memory()
