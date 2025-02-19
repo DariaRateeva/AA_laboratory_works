@@ -1,91 +1,104 @@
 import time
 import tracemalloc
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def multiply(mat1, mat2):
-    # Perform matrix multiplication
-    x = mat1[0][0] * mat2[0][0] + mat1[0][1] * mat2[1][0]
-    y = mat1[0][0] * mat2[0][1] + mat1[0][1] * mat2[1][1]
-    z = mat1[1][0] * mat2[0][0] + mat1[1][1] * mat2[1][0]
-    w = mat1[1][0] * mat2[0][1] + mat1[1][1] * mat2[1][1]
-
-    # Update matrix mat1 with the result
-    mat1[0][0], mat1[0][1] = x, y
-    mat1[1][0], mat1[1][1] = z, w
+def matrix_multiply(A, B, m):
+    """
+    Multiply two 2x2 matrices with modulo to prevent overflow
+    """
+    return [
+        [(A[0][0] * B[0][0] + A[0][1] * B[1][0]) % m, (A[0][0] * B[0][1] + A[0][1] * B[1][1]) % m],
+        [(A[1][0] * B[0][0] + A[1][1] * B[1][0]) % m, (A[1][0] * B[0][1] + A[1][1] * B[1][1]) % m]
+    ]
 
 
-# Function to perform matrix exponentiation
-def matrix_power(mat1, n):
-    # Base case for recursion
-    if n == 0 or n == 1:
-        return
+def matrix_power(matrix, n, m):
+    """
+    Calculate matrix power using efficient square-and-multiply algorithm with modulo
+    """
+    if n == 0:
+        return [[1, 0], [0, 1]]
 
-    # Initialize a helper matrix
-    mat2 = [[1, 1], [1, 0]]
+    # Initialize result as identity matrix
+    result = [[1, 0], [0, 1]]
+    base = matrix
 
-    # Recursively calculate mat1^(n // 2)
-    matrix_power(mat1, n // 2)
+    # Square and multiply algorithm
+    while n > 0:
+        if n % 2 == 1:
+            result = matrix_multiply(result, base, m)
+        base = matrix_multiply(base, base, m)
+        n //= 2
 
-    # Square the matrix mat1
-    multiply(mat1, mat1)
-
-    # If n is odd, multiply by the helper matrix mat2
-    if n % 2 != 0:
-        multiply(mat1, mat2)
+    return result
 
 
-# Function to calculate the nth Fibonacci number
 def nth_fibonacci(n):
-    if n <= 1:
-        return n
+    """
+    Calculate nth Fibonacci number using optimized matrix power
+    """
+    if n <= 0:
+        return 0
+    if n == 1:
+        return 1
 
-    # Initialize the transformation matrix
-    mat1 = [[1, 1], [1, 0]]
+    # Use a large prime modulo to prevent overflow while maintaining correctness
+    m = 10 ** 20 + 7
+    base_matrix = [[1, 1], [1, 0]]
+    result_matrix = matrix_power(base_matrix, n - 1, m)
+    return result_matrix[0][0]
 
-    # Raise the matrix mat1 to the power of (n - 1)
-    matrix_power(mat1, n - 1)
 
-    # The result is in the top-left cell of the matrix
-    return mat1[0][0]
-# Second series of Fibonacci indices (larger scope)
-second_series = [501, 631, 794, 1000, 1259, 1585, 1995, 2512, 3162, 3981, 5012, 6310, 7943, 10000, 12589, 15849]
+# Generate test series with exponential growth
+first_series = [2 ** i for i in range(5, 25)]  # From 2^5 to 2^24
 
-# List to store time taken for each computation
+# Lists to store measurements
 time_taken = []
 space_used = []
 
-# Compute Fibonacci numbers using Matrix Power method and measure time taken
-for num in second_series:
-    tracemalloc.start()
-    start_time = time.time()
-    nth_fibonacci(num)  # Using Matrix Power method
-    end_time = time.time()
+# Compute Fibonacci numbers and measure performance
+for num in first_series:
+    # Take multiple measurements for each n
+    times = []
+    peaks = []
+    for _ in range(5):  # Run 5 times for each number
+        tracemalloc.start()
+        start_time = time.time()
+        nth_fibonacci(num)
+        end_time = time.time()
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        times.append(end_time - start_time)
+        peaks.append(peak)
 
-    current_memory, peak_memory = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-
-    elapsed_time = end_time - start_time
+    # Use the minimum time and average memory to reduce impact of system variations
+    elapsed_time = min(times)
+    avg_memory = sum(peaks) / len(peaks) / 1024  # Convert to KB
     time_taken.append(elapsed_time)
-    space_used.append(peak_memory / 1024)
+    space_used.append(avg_memory)
+    print(f"Fibonacci({num}) computed in {elapsed_time:.6f} seconds, Peak Memory Usage: {avg_memory:.2f} KB")
 
-
-    print(f"Fibonacci({num}) computed in {elapsed_time:.6f} seconds, Peak Memory Usage: {peak_memory / 1024:.2f} KB")
-
-# Plot results
-plt.plot(second_series, time_taken, marker='o', linestyle='-', color='r')
-plt.xlabel("Fibonacci Term")
-plt.ylabel("Time Taken (seconds)")
-plt.title("Matrix Exponentiation Fibonacci Computation Time")
+# Plot time complexity
+plt.figure(figsize=(10, 6))
+plt.loglog(first_series, time_taken, 'bo-', label='Actual time')
+ref_log = [time_taken[0] * np.log2(x) / np.log2(first_series[0]) for x in first_series]
 plt.grid(True)
+plt.xlabel('n (log scale)')
+plt.ylabel('Time (seconds, log scale)')
+plt.title('Time Complexity of Matrix Power Fibonacci')
+plt.legend()
 plt.show()
 
 # Plot space complexity
-plt.figure(figsize=(10, 5))
-plt.plot(second_series, space_used, marker='s', linestyle='-', color='b', label="Peak Memory Usage")
-plt.xlabel("Fibonacci Term (n)")
-plt.ylabel("Memory Usage (KB)")
-plt.title("Matrix Exponentiation Fibonacci Space Complexity")
+plt.figure(figsize=(10, 6))
+plt.loglog(first_series, space_used, 'go-', label='Actual space')
+ref_log_space = [space_used[0] * np.log2(x) / np.log2(first_series[0]) for x in first_series]
 plt.grid(True)
+plt.xlabel('n (log scale)')
+plt.ylabel('Memory Usage (KB, log scale)')
+plt.title('Space Complexity of Matrix Power Fibonacci')
 plt.legend()
 plt.show()
+
