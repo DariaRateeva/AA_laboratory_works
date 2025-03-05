@@ -1,8 +1,9 @@
-def partition(array, low, high):
+import random
 
-    # choose the rightmost element as pivot
-    mid = low + (high - low) // 2
-    array[mid], array[high] = array[high], array[mid]  # Swap mid with high
+def partition(array, low, high):
+    pivot_index = random.randint(low, high)
+    array[pivot_index], array[high] = array[high], array[pivot_index]
+
     pivot = array[high]
 
     # pointer for greater element

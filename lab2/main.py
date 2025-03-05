@@ -4,12 +4,10 @@ import matplotlib.pyplot as plt
 import copy
 import sys
 
-# Increase recursion limit for QuickSort
 sys.setrecursionlimit(10000)
 
-# Assuming these are the correct file names containing your sorting algorithms
 try:
-    from bubbleSort import bubbleSort
+    from selectionSort import selectionSort
     from heapSort import heapSort
     from mergeSort import mergeSort
     from quickSort import quickSort
@@ -22,12 +20,12 @@ except ImportError as e:
 # Function to generate different types of arrays with negative numbers
 def generate_arrays(size=1000):
     # Use a range that includes negative numbers (-1000 to 1000 for random, -100 to 100 for duplicates)
-    random_arr = [random.randint(-1000, 1000) for _ in range(size)]
+    random_arr = [random.randint(-10000, 10000) for _ in range(size)]
     sorted_arr = sorted(random_arr.copy())
     reversed_arr = sorted(random_arr.copy(), reverse=True)
     partially_sorted_arr = sorted(random_arr[:size // 2]) + random_arr[size // 2:]
     duplicate_arr = [random.randint(-100, 100) for _ in
-                     range(size)]  # Smaller range for duplicates, including negatives
+                     range(size)]
 
     return {
         "random": random_arr,
@@ -39,7 +37,6 @@ def generate_arrays(size=1000):
 
 
 # Function to measure execution time of sorting algorithms
-# Function to measure execution time of sorting algorithms
 def measure_time(algorithm, arr, *args):
     arr_copy = copy.deepcopy(arr)
     start_time = time.time()
@@ -49,7 +46,7 @@ def measure_time(algorithm, arr, *args):
             algorithm(arr_copy, 0, len(arr_copy) - 1)
         elif algorithm == mergeSort:
             algorithm(arr_copy, 0, len(arr_copy) - 1)
-        else:  # bubble_sort and heapSort
+        else:
             algorithm(arr_copy)
     except Exception as e:
         print(f"Error in {algorithm.__name__}: {e}")
@@ -59,15 +56,12 @@ def measure_time(algorithm, arr, *args):
     return (end_time - start_time) * 1000
 
 
-# Main analysis function with different sizes for different algorithms
 def perform_analysis():
-    # Smaller sizes for Quick Sort due to recursion depth limitations
     quick_sort_sizes = [500, 1550, 5500, 8500]
-    # Larger sizes for Bubble Sort, Heap Sort, and Merge Sort
-    other_sort_sizes = [800, 1500, 10000, 12000]
+    sort_sizes = [500, 1550, 5500, 8500]
 
     algorithms = {
-        "Bubble Sort": bubbleSort,
+        "Selection Sort": selectionSort,
         "Heap Sort": heapSort,
         "Merge Sort": mergeSort,
         "Quick Sort": quickSort
@@ -78,7 +72,7 @@ def perform_analysis():
                for alg in algorithms}
 
     for alg_name, alg_func in algorithms.items():
-        sizes_to_use = quick_sort_sizes if alg_name == "Quick Sort" else other_sort_sizes
+        sizes_to_use = sort_sizes
 
         for size in sizes_to_use:
             arrays = generate_arrays(size)
@@ -88,16 +82,15 @@ def perform_analysis():
                 if execution_time is not None:
                     results[alg_name][data_type].append(execution_time)
                 else:
-                    results[alg_name][data_type].append(0)  # Default value for failed execution
+                    results[alg_name][data_type].append(0)
 
-    return results, (quick_sort_sizes, other_sort_sizes)
+    return results, (sort_sizes, sort_sizes)
 
 
-# Function to plot results
 def plot_results(results, sizes):
     data_types = ["random", "sorted", "reversed", "partially_sorted", "duplicates"]
     algorithms = list(results.keys())
-    colors = ['b', 'g', 'r', 'c', 'm']  # Colors for 5 data types
+    colors = ['b', 'g', 'r', 'c', 'm']
 
     for i, alg in enumerate(algorithms):
         plt.figure(figsize=(10, 6))
@@ -115,7 +108,6 @@ def plot_results(results, sizes):
         plt.show()
 
 
-# Main execution
 if __name__ == "__main__":
     results, sizes = perform_analysis()
     plot_results(results, sizes)
@@ -130,11 +122,10 @@ if __name__ == "__main__":
 
     print("\n2. Metrics Used:")
     print("   - Execution time in milliseconds")
-    print(f"   - Array sizes for Quick Sort: {sizes[0]}")
-    print(f"   - Array sizes for Bubble, Heap, and Merge Sort: {sizes[1]}")
+    print(f"   - Array sizes: {sizes[1]}")
 
     print("\n3. Observations:")
-    print("   - Bubble Sort: Expected O(n²) complexity, worst with reversed arrays")
+    print("   - Selection Sort: Expected O(n²) complexity, consistent performance")
     print("   - Heap Sort: O(n log n) complexity, consistent performance")
     print("   - Merge Sort: O(n log n) complexity, stable across all cases")
     print("   - Quick Sort: Average O(n log n), worst case O(n²) with sorted arrays, limited by recursion depth")
